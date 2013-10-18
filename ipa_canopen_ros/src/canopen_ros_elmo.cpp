@@ -322,7 +322,7 @@ void setJointConstraints(ros::NodeHandle n)
       for (int i = 0; i < DOF; i++)
       {
           MaxVelocities[i] = model.getJoint(jointNames[i].c_str())->limits->velocity;
-	  std::cout << "MaxVels" << MaxVelocities[i] << std::endl;
+
       }
 
       /// Get lower limits out of urdf model
@@ -330,7 +330,7 @@ void setJointConstraints(ros::NodeHandle n)
       for (int i = 0; i < DOF; i++)
       {
           LowerLimits[i] = model.getJoint(jointNames[i].c_str())->limits->lower;
-	  std::cout << "LowerLimits" << LowerLimits[i] << std::endl;
+
       }
 
       // Get upper limits out of urdf model
@@ -338,7 +338,7 @@ void setJointConstraints(ros::NodeHandle n)
       for (int i = 0; i < DOF; i++)
       {
           UpperLimits[i] = model.getJoint(jointNames[i].c_str())->limits->upper;
-	  std::cout << "UpperLimits" << UpperLimits[i] << std::endl;
+
       }
 
       /// Get offsets out of urdf model
@@ -346,7 +346,7 @@ void setJointConstraints(ros::NodeHandle n)
       for (int i = 0; i < DOF; i++)
       {
           Offsets[i] = model.getJoint(jointNames[i].c_str())->calibration->rising.get()[0];
-	  std::cout << "Offsets" << Offsets[i] << std::endl;
+
       }
 
       /// Set parameters
@@ -357,7 +357,7 @@ void setJointConstraints(ros::NodeHandle n)
       joint_limits_->setMaxVelocities(MaxVelocities);
       joint_limits_->setOffsets(Offsets);
 
-std::cout << "succesfuly set urdf" << std::endl;
+
 
      /********************************************
      *
