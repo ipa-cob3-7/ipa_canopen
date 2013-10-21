@@ -200,9 +200,14 @@ void setVel(const brics_actuator::JointVelocities &msg, std::string chainName)
             velocities.push_back( velocity);
         }
 
+	int counter = 0;
+       
         for (auto device : canopen::devices)
         {
-            positions.push_back((double)device.second.getDesiredPos());
+		
+            double pos = (double)device.second.getDesiredPos() + joint_limits_->getOffsets()[counter];
+            positions.push_back(pos);
+	    counter++;
         }
 
         //joint_limits_->checkVelocityLimits(velocities);
@@ -300,7 +305,7 @@ void setJointConstraints(ros::NodeHandle n)
           ROS_ERROR("Unable to load robot model from parameter %s",full_param_name.c_str());
           n.shutdown();
       }
-      ROS_INFO("%s content\n%s", full_param_name.c_str(), xml_string.c_str());
+     // ROS_INFO("%s content\n%s", full_param_name.c_str(), xml_string.c_str());
 
       /// Get urdf model out of robot_description
       urdf::Model model;
@@ -317,6 +322,7 @@ void setJointConstraints(ros::NodeHandle n)
       for (int i = 0; i < DOF; i++)
       {
           MaxVelocities[i] = model.getJoint(jointNames[i].c_str())->limits->velocity;
+
       }
 
       /// Get lower limits out of urdf model
@@ -324,6 +330,7 @@ void setJointConstraints(ros::NodeHandle n)
       for (int i = 0; i < DOF; i++)
       {
           LowerLimits[i] = model.getJoint(jointNames[i].c_str())->limits->lower;
+
       }
 
       // Get upper limits out of urdf model
@@ -331,6 +338,7 @@ void setJointConstraints(ros::NodeHandle n)
       for (int i = 0; i < DOF; i++)
       {
           UpperLimits[i] = model.getJoint(jointNames[i].c_str())->limits->upper;
+
       }
 
       /// Get offsets out of urdf model
@@ -338,6 +346,7 @@ void setJointConstraints(ros::NodeHandle n)
       for (int i = 0; i < DOF; i++)
       {
           Offsets[i] = model.getJoint(jointNames[i].c_str())->calibration->rising.get()[0];
+
       }
 
       /// Set parameters
@@ -347,6 +356,8 @@ void setJointConstraints(ros::NodeHandle n)
       joint_limits_->setLowerLimits(LowerLimits);
       joint_limits_->setMaxVelocities(MaxVelocities);
       joint_limits_->setOffsets(Offsets);
+
+
 
      /********************************************
      *
@@ -433,18 +444,31 @@ int main(int argc, char **argv)
 
     ros::Rate loop_rate(lr);
 
-    //setJointConstraints(n);
+    setJointConstraints(n);
+    
 
     while (ros::ok())
     {
 
     // iterate over all chains, get current pos and vel and publish as topics:
+	int counter = 0;
+        std::vector <double> positions;
+
+        for (auto device : canopen::devices)
+        {
+		
+            double pos = (double)device.second.getActualPos() + joint_limits_->getOffsets()[counter];
+            positions.push_back(pos);
+	    counter++;
+        }
+
         for (auto dg : (canopen::deviceGroups))
         {
             sensor_msgs::JointState js;
             js.name = dg.second.getNames();
             js.header.stamp = ros::Time::now(); // todo: possibly better use timestamp of hardware msg?
-            js.position = dg.second.getActualPos();
+	    
+            js.position = positions;//dg.second.getActualPos();
             //std::cout << "Position" << js.position[0] << std::endl;
             js.velocity = dg.second.getActualVel();
             js.effort = std::vector<double>(dg.second.getNames().size(), 0.0);
@@ -461,6 +485,7 @@ int main(int argc, char **argv)
             std_msgs::String opmode;
             opmode.data = "velocity";
             currentOperationModePublishers[dg.first].publish(opmode);
+	    counter++;
         }
 
         // publishing diagnostic messages
